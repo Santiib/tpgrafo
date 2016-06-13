@@ -9,13 +9,13 @@ def grafo_crear():
 '''Agrega un elemento al grafo sin aristas.'''
 def grafo_agregar_vertice(grafo, vertice, dato):
 	grafo.vertices[vertice] = dato
-	grafo.relacionados[vertice] = []
+	grafo.relacionados[vertice] = {}
 
 '''Agrega una arista dirigida del vertice1 al vertice2.'''
-def grafo_agregar_arista(grafo, vertice_1, vertice_2):
+def grafo_agregar_arista(grafo, vertice_1, vertice_2, peso):
 	if vertice_1 not in grafo.vertices:
 		return False
-	(grafo.relacionados[vertice_1]).append(vertice_2)
+	(grafo.relacionados[vertice_1])[vertice_2] = peso
 	return True
 	
 '''Verifica si existe una arista desde el vertice1 dirigida al vertice2.'''
@@ -37,7 +37,7 @@ def grafo_esta_vacio(grafo):
 def borrar_arista(grafo, nodo_1, vertice_2):
 	if (vertice_1 not in grafo.vertices) or (vertice_2 not in grafo.relacionados[vertice_1]):
 		return False
-	(grafo.relacionados[vertice_1]).pop(vertice_2)
+	del (grafo.relacionados[vertice_1])[vertice_2]
 	return True
 	
 '''Borra vertice del grafo.'''
