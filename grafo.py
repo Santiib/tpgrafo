@@ -1,8 +1,88 @@
+from cola import *
+
 visitar_nulo = lambda a,b,c,d: True
 heuristica_nula = lambda actual,destino: 0
 
 ADYACENCIAS = 1
 DATO_VERTICE = 0
+
+def _dfs(grafo, actual, visitados, orden, padre, visitar, extra):
+
+    continuar = visitar(actual, padre, orden, extra)
+
+    if not continuar:
+        return 
+
+    visitados.append(actual)
+    adyacentes = grafo.adyacentes(actual)
+
+    for vertice in adyacentes:
+
+        if vertice not in visitados :
+
+            padre[vertice] = actual
+            orden[vertice] = orden[actual] + 1
+            _dfs(grafo, vertice, visitados, orden, padre, visitar, extra)
+
+
+def _bfs(grafo, origen, visitados, orden, padre, visitar, extra):  
+
+    cola = Cola()
+    cola.encolar(origen)
+    visitados.append(origen)
+        
+    while not cola.esta_vacia():
+            
+        actual = cola.desencolar()
+        continuar = visitar(actual, padre, orden, extra)
+
+        if not continuar:
+
+           return 
+
+        adyacentes = grafo.adyacentes(actual)
+
+        for vertice in adyacentes:
+
+            if vertice not in visitados:
+
+                visitados.append(vertice)
+                padre[vertice] = actual
+                orden[vertice] = orden[actual] + 1       
+                cola.encolar(vertice)
+
+
+def recorrido(grafo, tipo_recorrido, inicio, visitar, extra):
+
+        visitados = []
+        padre = dict()
+        orden = dict()
+        
+        if not inicio:
+            for vertice in grafo:
+                if vertice not in visitados:
+                    padre[vertice] = None
+                    orden[vertice] = 0
+                    tipo_recorrido(grafo, vertice, visitados, orden, padre, visitar, extra)
+        else:
+
+            padre[inicio] = None 
+            orden[inicio] = 0
+
+            tipo_recorrido(grafo, inicio, visitados, orden, padre, visitar, extra)
+        return padre,orden
+
+def obtener_componentes_conexas(vertice,padre,orden,lista_componentes):
+
+    if not padre[vertice]:
+        lista_componentes.append([vertice])
+
+    else:
+        ultima_componente = len(lista_componentes) - 1
+        lista_componentes[ultima_componente].append(vertice)    
+
+    return True        
+
 class Grafo(object):
     '''Clase que representa un grafo. El grafo puede ser dirigido, o no, y puede no indicarsele peso a las aristas
     (se comportara como peso = 1). Implementado como "diccionario de diccionarios"'''
@@ -23,6 +103,7 @@ class Grafo(object):
         '''Devuelve un iterador de vertices, sin ningun tipo de relacion entre los consecutivos'''
 
         for k in self.vertices:
+
             yield k
         
     def keys(self):
@@ -41,17 +122,22 @@ class Grafo(object):
         '''
 
         if id in self.vertices:
+
             self.vertices[id][DATO_VERTICE] = valor
+
         else:
-            self.vertices.update({id:[valor,dict()]})
+
+            self.vertices[id] = [valor,dict()]
             self.cantidad_vertices+=1
     
     def __delitem__(self, id):
         '''Elimina el vertice del grafo, y devuelve el valor asociado. Si no existe el identificador en el grafo, lanzara KeyError.
         Borra tambien todas las aristas que salian y entraban al vertice en cuestion.
         '''
-        dato = self.vertices[id][DATO_VERTICE]        
+        dato = self.vertices[id][DATO_VERTICE]  
+      
         for k in self.vertices[id][ADYACENCIAS]:
+
             self._borrar_arista(k,id,1) 
 
         self.vertices.pop(id)
@@ -62,31 +148,44 @@ class Grafo(object):
         ''' Determina si el grafo contiene un vertice con el identificador indicado.'''
 
         return id in self.vertices
+
+    def _agregar_arista(self, desde, hasta, peso, recursion):
         
+        if recursion > 1:
+
+            return
+
+        nueva_arista = (desde,hasta)                
+        self.vertices[desde][ADYACENCIAS][hasta] = peso
+
+        if not self.dirigido:
+
+            self._agregar_arista(hasta,desde,peso,recursion+1)
+
     def agregar_arista(self, desde, hasta, peso = 1):
         '''Agrega una arista que conecta los vertices indicados. Parametros:
             - desde y hasta: identificadores de vertices dentro del grafo. Si alguno de estos no existe dentro del grafo, lanzara KeyError.
             - Peso: valor de peso que toma la conexion. Si no se indica, valdra 1.
             Si el grafo es no-dirigido, tambien agregara la arista reciproca.
         '''
-
-        nueva_arista = (desde,hasta)                
-        self.vertices[desde][ADYACENCIAS].update({hasta:peso})
-        if not self.dirigido:
-            self.agregar_arista(hasta,desde,peso)
-
+        self._agregar_arista(desde, hasta, peso, 0)
+        
     def _borrar_arista(self,desde,hasta,paso_recursivo):
 
         if paso_recursivo > 1 or (paso_recursivo == 1 and desde == hasta): #En el caso de que este en un grafo no dirigido, o con un lazo
             return
 
         if self.vertices[hasta] and self.vertices[desde]:
+
             try:
                
                self.vertices[desde][ADYACENCIAS].pop(hasta)
             except KeyError:
+
                 raise ValueError
+
         if not self.dirigido:
+
             self._borrar_arista(hasta,desde,paso_recursivo+1)      
                 
     def borrar_arista(self, desde, hasta):
@@ -103,13 +202,15 @@ class Grafo(object):
             En caso de no existir la union consultada, se devuelve None.
         '''
         if self.vertices[hasta] and self.vertices[desde]:
+
             return self.vertices[desde][ADYACENCIAS].get(hasta)
        
     def adyacentes(self, id):
         '''Devuelve una lista con los vertices (identificadores) adyacentes al indicado. Si no existe el vertice, se lanzara KeyError'''
         return [k for k in self.vertices[id][ADYACENCIAS]]
-    
-    def bfs(self, visitar = visitar_nulo, extra = None, inicio=None):
+
+ 
+    def bfs(self, inicio=None, visitar = visitar_nulo, extra = None):
         '''Realiza un recorrido BFS dentro del grafo, aplicando la funcion pasada por parametro en cada vertice visitado.
         Parametros:
             - visitar: una funcion cuya firma sea del tipo: 
@@ -127,9 +228,11 @@ class Grafo(object):
                 - 'padre' es un diccionario que indica para un identificador, cual es el identificador del vertice padre en el recorrido BFS (None si es el inicio)
                 - 'orden' es un diccionario que indica para un identificador, cual es su orden en el recorrido BFS
         '''
-        raise NotImplementedError()
-    
-    def dfs(self, visitar = visitar_nulo, extra = None, inicio=None):
+        padre,orden = recorrido(self, _bfs, inicio, visitar, extra)   
+        return padre,orden
+        
+
+    def dfs(self, inicio=None, visitar = visitar_nulo, extra = None):
         '''Realiza un recorrido DFS dentro del grafo, aplicando la funcion pasada por parametro en cada vertice visitado.
         - visitar: una funcion cuya firma sea del tipo: 
                     visitar(v, padre, orden, extra) -> Boolean
@@ -146,14 +249,22 @@ class Grafo(object):
                 - 'padre' es un diccionario que indica para un identificador, cual es el identificador del vertice padre en el recorrido DFS (None si es el inicio)
                 - 'orden' es un diccionario que indica para un identificador, cual es su orden en el recorrido DFS
         '''
-        raise NotImplementedError()
+        padre,orden = recorrido(self, _dfs, inicio, visitar, extra)   
+        return padre,orden
+        
     
     def componentes_conexas(self):
         '''Devuelve una lista de listas con componentes conexas. Cada componente conexa es representada con una lista, con los identificadores de sus vertices.
         Solamente tiene sentido de aplicar en grafos no dirigidos, por lo que
         en caso de aplicarse a un grafo dirigido se lanzara TypeError'''
-        raise NotImplementedError()
-                
+
+        if self.dirigido:
+            raise TypeError 
+
+        lista_componentes_conexas = []
+        self.bfs(None, obtener_componentes_conexas,lista_componentes_conexas)
+
+        return lista_componentes_conexas
 
     def camino_minimo(self, origen, destino, heuristica=heuristica_nula):
         '''Devuelve el recorrido minimo desde el origen hasta el destino, aplicando el algoritmo de Dijkstra, o bien
