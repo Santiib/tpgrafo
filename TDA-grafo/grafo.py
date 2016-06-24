@@ -38,8 +38,7 @@ class Grafo(object):
     def __getitem__(self, id):
         '''Devuelve el valor del vertice asociado, del identificador indicado. Si no existe el identificador en el grafo, lanzara KeyError.'''
         
-        #return self.vertices[id][DATO_VERTICE]
-        return self.vertices[id].dato
+        return self.vertices[id].obtener_dato()
 
     def __setitem__(self, id, valor):
         '''Agrega un nuevo vertice con el par <id, valor> indicado. ID debe ser de identificador unico del vertice.
@@ -48,21 +47,26 @@ class Grafo(object):
 
         if id in self.vertices:
 
-            self.vertices[id].dato = valor
+            self.vertices[id].actualizar_dato(valor)
 
         else:
-            nuevo_vertice = Vertice(id)
+            nuevo_vertice = Vertice(valor)
             self.vertices[id] = nuevo_vertice
-            self.cantidad_vertices+=1
+            self.cantidad_vertices += 1
     
     def __delitem__(self, id):
         '''Elimina el vertice del grafo, y devuelve el valor asociado. Si no existe el identificador en el grafo, lanzara KeyError.
         Borra tambien todas las aristas que salian y entraban al vertice en cuestion.
         '''
-        dato = self.vertices[id].dato
-        for adyacente in self.vertices[id].adyacentes:
+        dato = obtener_dato(self.vertices[id])
+        
+        adyacentes = self.vertices[id].adyacentes.keys()
+        for adyacente in adyacentes:
 
-            self._borrar_arista(adyacentes,id,1) 
+            self._borrar_arista(id,adyacente,1) 
+            if self.dirigido:
+
+                self.vertices[adyacente].eliminar_incidencia(id, self)
 
         self.vertices.pop(id)
         self.cantidad_vertices-=1
@@ -72,6 +76,18 @@ class Grafo(object):
         ''' Determina si el grafo contiene un vertice con el identificador indicado.'''
 
         return id in self.vertices
+
+    def es_dirigido(self):
+        
+        return self.dirigido
+        
+    def incidencias(self,id):
+
+        if not self.dirigido:
+        
+            raise ValueError
+
+        return self.vertices[id].obtener_vertices_incidentes()
 
     def obtener_peso_total(self):
 
@@ -83,12 +99,10 @@ class Grafo(object):
 
             self.aristas+=1 
             self.peso_total+=peso
-            self.vertices[desde].grado_entrada += 1
-            self.vertices[hasta].grado_salida += 1
             return
 
         nueva_arista = (desde,hasta)                
-        self.vertices[desde].adyacentes[hasta] = peso
+        self.vertices[desde].agregar_adyacencia(hasta, peso)
 
         if not self.dirigido:
 
@@ -98,8 +112,7 @@ class Grafo(object):
 
             self.aristas+=1 
             self.peso_total += peso
-            self.vertices[desde].grado_salida += 1
-            self.vertices[hasta].grado_entrada += 1
+            self.vertices[hasta].agregar_incidencia(desde, peso)
 
 
     def agregar_arista(self, desde, hasta, peso = 1):
@@ -108,10 +121,18 @@ class Grafo(object):
             - Peso: valor de peso que toma la conexion. Si no se indica, valdra 1.
             Si el grafo es no-dirigido, tambien agregara la arista reciproca.
         '''
-        if hasta in self.vertices[desde].adyacentes:
-            self.vertices[desde].adyacentes[hasta] = peso
+        if self.vertices[desde].es_adyacente(hasta):
+
+            self.vertices[desde].agregar_adyacencia(hasta, peso)
+
             if not self.dirigido:
-                self.vertices[hasta].adyacentes[desde] = peso
+
+                self.vertices[hasta].agregar_adyacencia(desde, peso)
+            
+            else:
+
+                self.vertices[hasta].agregar_incidencia(desde, peso)
+
             return
 
         self._agregar_arista(desde, hasta, peso, 0)
@@ -125,7 +146,7 @@ class Grafo(object):
 
             try:
                
-               self.vertices[desde].adyacentes.pop(hasta)
+               self.vertices[desde].eliminar_adyacencia(hasta)
 
             except KeyError:
 
@@ -133,7 +154,11 @@ class Grafo(object):
 
         if not self.dirigido:
 
-            self._borrar_arista(hasta,desde,paso_recursivo+1)      
+            self._borrar_arista(hasta,desde,paso_recursivo+1)
+
+        else:
+
+            self.vertices[hasta].eliminar_incidencia(desde, self)      
                 
     def borrar_arista(self, desde, hasta):
         '''Borra una arista que conecta los vertices indicados. Parametros:
@@ -150,11 +175,13 @@ class Grafo(object):
         '''
         if self.vertices[hasta] and self.vertices[desde]:
 
-            return self.vertices[desde].adyacentes.get(hasta)
+            return self.vertices[desde].obtener_costo_arista(hasta)
        
     def adyacentes(self, id):
         '''Devuelve una lista con los vertices (identificadores) adyacentes al indicado. Si no existe el vertice, se lanzara KeyError'''
-        return [adyacente for adyacente in self.vertices[id].adyacentes]
+
+        vertice = self.vertices[id]
+        return vertice.obtener_vertices_adyacentes()
 
     
     def incidencia_vertice(self,id):
@@ -166,9 +193,11 @@ class Grafo(object):
             raise KeyError
 
         grado = 0
+
         for vertice in self.vertices:
 
-            adyacencias = self.vertices[vertice].adyacentes   
+            adyacencias = self.vertices[vertice].adyacentes 
+  
             if id in adyacencias:
 
                 grado += 1
