@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import sys
 from grafo import *
+from PriorityQueue import * #clase del modulo PriorityQueue con el metodo añadido para ver primero
+
 COEFICIENTE_AMORTIGUACION = 0.85
 RANKING_DEFAULT = 0.50
 
@@ -51,9 +53,9 @@ def calcular_pagerank(wikipedia_es):
 
     sumatoria_pageranks = 0
     for articulo in wikipedia_es:
+
         sumatoria_pageranks += wikipedia_es[articulo]
 
-    print sumatoria_pageranks
     
     iteraciones = pedir_natural("Ingrese el valor de k (k > 0)")
     cantidad_vertices = len(wikipedia_es)
@@ -73,20 +75,106 @@ def calcular_pagerank(wikipedia_es):
 
             pagerank_articulo = ((1 - COEFICIENTE_AMORTIGUACION) / cantidad_vertices) + (COEFICIENTE_AMORTIGUACION * sumatoria)
             wikipedia_es[articulo] = pagerank_articulo
+
         iteraciones -= 1
         
     sumatoria_pageranks = 0
     for articulo in wikipedia_es:
+
         sumatoria_pageranks += wikipedia_es[articulo]
 
-def consultar_pagerank_articulo(grafo):
-    raise NotImplementedError()
+def consultar_pagerank_articulo(grafo_wikipedia):
 
-def ver_top_pagerank(grafo):
-    raise NotImplementedError()
+    continuar = True
+    
+    while continuar:
 
-def buscar_recorrido_minimo(grafo):
-    raise NotImplementedError()
+        try:
+    
+            articulo_interes = raw_input("Ingrese el nombre del articulo: ")
+            if articulo_interes == "-1":
+
+                continuar = False
+
+            print grafo_wikipedia[articulo_interes]
+            continuar = False
+
+        except KeyError:
+
+            print "El articulo que ingreso no existe, ingrese un articulo valido o -1 para salir"
+       
+
+def ver_top_pagerank(grafo_wikipedia):
+
+    limite = len(grafo_wikipedia)
+    cantidad = pedir_natural("Cuantos elementos desea ver en el top?: ")
+    if cantidad > limite:
+
+        cantidad = limite
+
+    articulos = [articulo for articulo in grafo_wikipedia]
+    posicion_actual = 0
+    top_articulos = ColaPrioridad()
+    for x in range(0,cantidad): #Encolo <cantidad> de articulos al principio, si no podria estar ignorando soluciones
+
+        top_articulos.put((grafo_wikipedia[articulos[x]], articulos[x]))
+        posicion_actual+=1
+    
+    for i in range(posicion_actual, limite):
+
+        articulo_actual = articulos[i]
+        pagerank_actual = grafo_wikipedia[articulo_actual]
+        ultimo_mejor = top_articulos.first()
+        pagerank_ultimo_mejor = ultimo_mejor[0]
+        
+        if pagerank_actual > pagerank_ultimo_mejor:
+
+            top_articulos.get()
+            top_articulos.put((pagerank_actual,articulo_actual))
+    
+    mejores = list()
+    while not top_articulos.empty():
+        articulo = top_articulos.get()
+        mejores.append(articulo)
+
+    mejores.reverse()
+    valor_pagerank = 0
+    nombre_articulo = 1
+    print ""
+    for pos_articulo in range(len(mejores)):
+         
+        print "{}. {}: {}".format(pos_articulo + 1, mejores[pos_articulo]
+                        [nombre_articulo], mejores[pos_articulo][valor_pagerank]) 
+    print ""   
+
+def pedir_articulo(grafo, mensaje):
+
+    continuar = True
+    
+    while continuar:
+
+        articulo = raw_input(mensaje)
+        if articulo in grafo:
+
+            continuar = False
+            continue
+
+        print "**El articulo ingresado no se encontro en la base de datos, por favor reintentar**"
+
+    return articulo
+
+def buscar_recorrido_minimo(grafo_wikipedia_es):
+    
+    origen = pedir_articulo(grafo_wikipedia_es,"Ingrese el nombre del articulo de origen: ")
+    destino = pedir_articulo(grafo_wikipedia_es,"Ingrese el nombre del articulo de destino: ")
+    link_origen_destino = grafo_wikipedia_es.camino_minimo(origen,destino)
+    if link_origen_destino:
+
+        print "->".join(link_origen_destino)
+    
+    else:
+
+        print "No hay links de "+origen+" con destino a "+destino
 
 def centralidad(grafo):
     raise NotImplementedError()
