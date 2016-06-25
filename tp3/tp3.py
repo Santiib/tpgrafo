@@ -128,7 +128,6 @@ def main():
     grafo_wikipedia_es = cargar_articulos(archivo,cantidad_articulos)
     relacionar_articulos(archivo,grafo_wikipedia_es,cantidad_articulos)
     archivo.close()
-    print "Bienvenidos a WikipediaUltraMegaRed"
     print "Escoja una opcion, o -1 para finalizar el programa"
     
     opciones = menu.keys()
