@@ -176,8 +176,31 @@ def buscar_recorrido_minimo(grafo_wikipedia_es):
 
         print "No hay links de "+origen+" con destino a "+destino
 
-def centralidad(grafo):
-    raise NotImplementedError()
+def centralidad(grafo, k):
+	calculados = []
+	centralidad = {}
+	for v in grafo.vertices:
+		for w in grafo.vertices:
+			if (not grafo.es_dirigido) and (vertice in calculados):
+				continue
+			camino = grafo.camino_minimo(v, w)
+			if camino is None:
+				continue
+			for u in camino:
+				if u not in centralidad:
+					centralidad[u] = 1
+				else:
+					centralidad[u] += 1
+		calculados.append(v)
+	print centralidad
+	centralidades = sorted(centralidad.items(), key=operator.itemgetter(1)) #devuelve lista de las key ordenadas por su valor
+	centralidades.reverse()
+	pos = 0
+	k_mas_centrales = []
+	while pos < k:
+		k_mas_centrales.append((centralidades[pos])[0])
+		pos += 1
+	return k_mas_centrales
 
 def funcion6(grafo):
     raise NotImplementedError()
