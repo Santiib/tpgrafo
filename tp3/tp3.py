@@ -192,7 +192,6 @@ def centralidad(grafo, k):
 				else:
 					centralidad[u] += 1
 		calculados.append(v)
-	print centralidad
 	centralidades = sorted(centralidad.items(), key=operator.itemgetter(1)) #devuelve lista de las key ordenadas por su valor
 	centralidades.reverse()
 	pos = 0
