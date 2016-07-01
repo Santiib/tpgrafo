@@ -195,11 +195,9 @@ def centralidad(grafo, k):
 	centralidades = sorted(centralidad.items(), key=operator.itemgetter(1)) #devuelve lista de las key ordenadas por su valor
 	centralidades.reverse()
 	pos = 0
-	k_mas_centrales = []
 	while pos < k:
-		k_mas_centrales.append((centralidades[pos])[0])
+		print (centralidades[pos])[0]
 		pos += 1
-	return k_mas_centrales
 
 def funcion6(grafo):
     raise NotImplementedError()
